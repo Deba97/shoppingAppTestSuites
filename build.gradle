@@ -1,0 +1,97 @@
+plugins {
+    id 'java-library'
+    id 'java'
+    id "io.freefair.lombok" version "5.1.0"
+    id 'org.springframework.boot' version '2.3.3.RELEASE'
+    id 'jacoco'
+    id "pmd"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+pmd {
+    consoleOutput = true
+    toolVersion = "6.34.0"
+    ignoreFailures = true
+    rulesMinimumPriority = 3
+    ruleSets = [
+            "category/java/errorprone.xml",
+            "category/java/bestpractices.xml",
+            "category/java/design.xml",
+            "category/java/multithreading.xml"
+
+    ]
+}
+
+
+dependencies {
+    def junitVersion = '5.7.1'
+    def logbackVersion = '1.2.4'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.3.0.RELEASE'
+    implementation 'javax.persistence:javax.persistence-api:2.2'
+    implementation 'org.projectlombok:lombok:1.18.12'
+    implementation 'org.apache.commons:commons-math3:3.5'
+    implementation 'com.h2database:h2:1.4.200'
+    implementation 'org.jdbi:jdbi3-core:3.14.1'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.3.0.RELEASE'
+
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'ch.qos.logback:logback-classic:$logbackVersion'
+    implementation 'ch.qos.logback:logback-core:$logbackVersion'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:$junitVersion'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:$junitVersion'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:3.141.59'
+    testImplementation 'io.github.bonigarcia:webdrivermanager:3.8.1'
+    testImplementation 'org.assertj:assertj-core:3.16.1'
+}
+
+group = 'edu.depail.se433'
+version = '0.0.1-SNAPSHOT'
+description = 'shopping-app'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+def user = 'nobaseki'
+
+bootJar {
+    mainClassName = 'edu.depaul.se433.shoppingapp.ShoppingAppApplication'
+}
+
+test {
+    finalizedBy jacocoTestReport
+    useJUnitPlatform ()
+    afterTest { desc, result ->
+        logger.quiet "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
+    }
+}
+
+task packageDistribution(type: Zip) {
+    dependsOn test
+    archiveFileName = "${user}-${rootProject.name}.zip"
+    destinationDirectory = file("$buildDir/dist")
+
+    from("$projectDir") {
+        include "src/**/*"
+        include "build.gradle"
+        include "gradlew"
+        include "gradlew.bat"
+        include "settings.gradle"
+    }
+
+    into("${rootProject.name}")
+}
+
+check {
+    finalizedBy{ packageDistribution}
+
+    dependsOn {jacocoTestCoverageVerification}
+}
